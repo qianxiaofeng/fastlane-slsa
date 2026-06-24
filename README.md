@@ -105,6 +105,7 @@ export MATCH_PASSWORD='一个强口令'           # 用于加解密证书
 |------|------|
 | `MATCH_PASSWORD` | match 解密口令（与本地一致） |
 | `CERT_REPO_APP_PRIVATE_KEY` | GitHub App 的私钥（.pem 全文），CI 用它签发短期 token 访问证书仓库 |
+| `CERT_REPO_APP_ID` | GitHub App 的 App ID（数字）；CI 据此 + 私钥签发短期 token。本身不算敏感，存 secret 只为与私钥统一管理 |
 | `FASTLANE_USER` | Apple ID 邮箱 |
 | `FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD` | [App-specific password](https://support.apple.com/en-us/102654)，上传时绕过 2FA |
 
@@ -164,6 +165,8 @@ gh attestation verify ExampleApp.ipa \
   Developer Portal（会触发 2FA），因此本项目刻意让 CI 的 `match` 走 **readonly**，
   把证书创建留在本地。若想让 CI 也能管理证书，更顺的方式是改用
   **App Store Connect API Key（.p8）**。
-- `actions/attest-build-provenance@v1` 建议在生产中固定到 commit SHA。
+- **所有 GitHub Actions 均已 pin 到 commit SHA**（见 `build-sign-attest.yml` 各 `uses:` 行，`#` 后注明版本号），
+  消除可变 tag 被改写带来的供应链风险——这对一个讲供应链安全的项目尤为应当。升级时需同步更新 SHA 与版本注释
+  （可借助 Dependabot：它能识别 pinned SHA 并在 PR 里连注释一起 bump）。
 - 真正跑通需要你自己的 Apple 账号、证书与 App Store Connect app 记录；本仓库提供的是
   可直接套用的骨架与流程。

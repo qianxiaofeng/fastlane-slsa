@@ -53,7 +53,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: 选择 Xcode 版本
         run: |
@@ -65,7 +65,7 @@ jobs:
           sudo xcode-select -switch "$XCODE"
 
       - name: 安装 Ruby 与 fastlane 依赖
-        uses: ruby/setup-ruby@v1
+        uses: ruby/setup-ruby@9eb537ca036ebaed86729dcb9309076e4c5c3b74 # v1.314.0
         with:
           ruby-version: "3.3" # 仓库无 .ruby-version/.tool-versions、Gemfile 也未声明 ruby，必须显式指定
           bundler-cache: true
@@ -82,7 +82,7 @@ jobs:
       #  而真·OIDC 继续服务于下方的 attest-build-provenance 签名。）
       - name: 签发证书仓库短期访问 token
         id: cert-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           app-id: ${{ secrets.CERT_REPO_APP_ID }}
           private-key: ${{ secrets.CERT_REPO_APP_PRIVATE_KEY }}
@@ -108,9 +108,9 @@ jobs:
 
       # —— SLSA Provenance：对最终 .ipa 生成并签名 attestation ——
       # 放在 build 之后、upload 之前，确保被证明的就是真正分发的那个产物。
-      # 注：生产环境建议把 @v1 固定到 commit SHA。
+      # 注：本仓库所有第三方 action 均已 pin 到 commit SHA（# 后注明版本号），升级时同步更新 SHA 与注释。
       - name: 生成 SLSA Build Provenance
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
         with:
           subject-path: build/ExampleApp.ipa
 
@@ -119,7 +119,7 @@ jobs:
         run: bundle exec fastlane ios upload
 
       - name: 归档 .ipa 产物
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ExampleApp-ipa
           path: build/ExampleApp.ipa
