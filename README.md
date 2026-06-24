@@ -15,7 +15,7 @@
 git tag v1.0.0  ──push──▶  release.yml (caller)
                               │ 调用（secrets: inherit）
                               ▼
-                  build-sign-attest.yml  (reusable workflow, macOS-14)
+                  build-sign-attest.yml  (reusable workflow, macOS-26)
                    ├─ fastlane match   下载证书/profile（readonly，不碰 Developer Portal）
                    ├─ fastlane gym     构建签名 .ipa
                    ├─ attest-build-provenance   ← 生成并签名 SLSA provenance（L3 关键）
