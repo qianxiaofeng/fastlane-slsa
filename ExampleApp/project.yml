@@ -33,6 +33,11 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: "SLSA Example"
         GENERATE_INFOPLIST_FILE: "YES"
         TARGETED_DEVICE_FAMILY: "1,2"
+        # App Store / TestFlight 上传校验要求：app 图标（asset catalog，编译时自动写
+        # CFBundleIconName）+ 声明支持的屏幕方向。否则 altool 报 409 Validation failed。
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
 
 # 显式声明 shared scheme，供 fastlane gym（scheme: ExampleApp）使用。
 schemes:
