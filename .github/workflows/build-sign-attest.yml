@@ -70,14 +70,19 @@ jobs:
           ruby-version: "3.3" # 仓库无 .ruby-version/.tool-versions、Gemfile 也未声明 ruby，必须显式指定
           bundler-cache: true
 
-      - name: 用 XcodeGen 生成 .xcodeproj
+      # 不用 brew 安装 xcodegen，改为下载官方 release 并校验 sha256：
+      #   ① 绕开 runner 预装的未受信任 tap（aws/tap、azure/bicep）触发的 brew 告警；
+      #   ② pin 版本 + 校验摘要 → 可复现、防篡改，与本项目"action 全部 pin SHA"一致。
+      # 升级：改 XCODEGEN_VERSION，并在本机对新版 zip 跑 `shasum -a 256` 同步 XCODEGEN_SHA256。
+      - name: 安装 XcodeGen（pin 版本 + 校验摘要）并生成 .xcodeproj
         env:
-          # macOS runner 预装的 aws/tap、azure/bicep 属未受信任 tap；显式开启 trust 检查，
-          # 让 brew 忽略它们（xcodegen 来自受信任的 homebrew/core，不受影响），消除过渡期警告。
-          HOMEBREW_REQUIRE_TAP_TRUST: "1"
+          XCODEGEN_VERSION: "2.45.4"
+          XCODEGEN_SHA256: "090ec29491aad50aec10631bf6e62253fed733c50f3aab0f5ffc86bc170bdbef"
         run: |
-          brew install xcodegen
-          cd ExampleApp && xcodegen generate
+          curl -fsSL "https://github.com/yonaskolb/XcodeGen/releases/download/${XCODEGEN_VERSION}/xcodegen.zip" -o /tmp/xcodegen.zip
+          echo "${XCODEGEN_SHA256}  /tmp/xcodegen.zip" | shasum -a 256 -c -
+          unzip -q /tmp/xcodegen.zip -d /tmp/xcodegen-dist
+          cd ExampleApp && /tmp/xcodegen-dist/xcodegen/bin/xcodegen generate
 
       # —— 用 GitHub App 签发【短期】token 访问私有证书仓库 ——
       # 取代长期 PAT：installation token 仅约 1 小时有效，权限锁死到"只读这一个证书仓库"。
