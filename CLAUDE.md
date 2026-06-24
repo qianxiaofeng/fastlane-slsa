@@ -50,7 +50,7 @@ git tag v1.0.0  ──▶  release.yml (caller，决定"何时发布")
                        │ uses: ./.github/workflows/build-sign-attest.yml
                        │ secrets: inherit
                        ▼
-              build-sign-attest.yml (reusable workflow，macOS-14，隔离环境)
+              build-sign-attest.yml (reusable workflow，macOS-26，隔离环境)
                ├─ fastlane match    readonly 从私有证书仓库下载证书（不登录 Developer Portal）
                ├─ fastlane gym      构建签名 build/ExampleApp.ipa
                ├─ attest-build-provenance   ← 生成并 Sigstore 签名 provenance（L3 关键步骤）
