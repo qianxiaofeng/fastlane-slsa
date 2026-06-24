@@ -67,6 +67,7 @@ jobs:
       - name: 安装 Ruby 与 fastlane 依赖
         uses: ruby/setup-ruby@v1
         with:
+          ruby-version: "3.3" # 仓库无 .ruby-version/.tool-versions、Gemfile 也未声明 ruby，必须显式指定
           bundler-cache: true
 
       - name: 用 XcodeGen 生成 .xcodeproj
