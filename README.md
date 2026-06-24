@@ -19,7 +19,7 @@ git tag v1.0.0  ──push──▶  release.yml (caller)
                    ├─ fastlane match   下载证书/profile（readonly，不碰 Developer Portal）
                    ├─ fastlane gym     构建签名 .ipa
                    ├─ attest-build-provenance   ← 生成并签名 SLSA provenance（L3 关键）
-                   ├─ syft + attest-sbom        ← 生成 SBOM 并 attest 到同一 .ipa
+                   ├─ syft + attest (sbom-path) ← 生成 SBOM 并 attest 到同一 .ipa
                    └─ fastlane pilot   上传 TestFlight（Apple ID + app-specific password）
 ```
 
