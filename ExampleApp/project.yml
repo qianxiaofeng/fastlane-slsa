@@ -25,8 +25,10 @@ targets:
       - Sources
     settings:
       base:
-        # 必须与 fastlane/Appfile、Matchfile 里的 APP_IDENTIFIER 一致。
-        PRODUCT_BUNDLE_IDENTIFIER: com.example.fastlaneslsa
+        # bundle id 走 APP_IDENTIFIER 环境变量注入，真实值不入库（与 Appfile/Matchfile 同源）。
+        # 注意：XcodeGen 仅在 env 已设置时替换 ${APP_IDENTIFIER}，未设置会原样保留导致空 bundle id——
+        # 故本地一律经 `just`（带占位回退后再 export 给 xcodegen）生成，CI 由 vars.APP_IDENTIFIER 注入。
+        PRODUCT_BUNDLE_IDENTIFIER: ${APP_IDENTIFIER}
         INFOPLIST_KEY_UILaunchScreen_Generation: "YES"
         INFOPLIST_KEY_CFBundleDisplayName: "SLSA Example"
         GENERATE_INFOPLIST_FILE: "YES"

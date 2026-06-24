@@ -10,8 +10,9 @@
 project_dir := "ExampleApp"
 xcodeproj   := "ExampleApp/ExampleApp.xcodeproj"
 scheme      := "ExampleApp"
-# 必须与 project.yml / fastlane 配置里的 PRODUCT_BUNDLE_IDENTIFIER 一致
-bundle_id   := "com.example.fastlaneslsa"
+# bundle id 走 APP_IDENTIFIER 环境变量（真实值不入库）；未设时回退到占位符。
+# generate 时把它 export 给 xcodegen 供 ${APP_IDENTIFIER} 替换，launch 时也用它——两边同源，保证一致。
+bundle_id   := env_var_or_default("APP_IDENTIFIER", "com.example.fastlaneslsa")
 derived     := "ExampleApp/DerivedData"
 app_path    := derived / "Build/Products/Debug-iphonesimulator" / scheme + ".app"
 
@@ -20,8 +21,9 @@ default:
     @just --list
 
 # 用 XcodeGen 生成 .xcodeproj（project.yml 改动后需重跑）
+# 把 bundle_id 注入环境，供 project.yml 的 ${APP_IDENTIFIER} 替换。
 generate:
-    cd {{project_dir}} && xcodegen generate
+    cd {{project_dir}} && APP_IDENTIFIER={{bundle_id}} xcodegen generate
 
 # 一条命令：生成 → 构建 → 装进模拟器 → 启动。可传机型，如 `just run "iPhone 15"`
 run simulator="iPhone 17": generate

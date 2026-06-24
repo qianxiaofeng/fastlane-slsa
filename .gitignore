@@ -17,6 +17,8 @@ fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
 fastlane/README.md.bak
+# fastlane 自动生成的 lane 文档（每次跑 fastlane 都会重写，不入库）
+fastlane/README.md
 
 # --- Ruby / bundler ---
 vendor/bundle/
