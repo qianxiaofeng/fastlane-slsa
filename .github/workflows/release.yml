@@ -22,6 +22,12 @@ on:
 
 jobs:
   release:
+    # reusable workflow 能获得的权限不能超过【调用方 job】授予的范围，必须在这里显式下放，
+    # 否则 build-sign-attest 请求的 id-token/attestations 会被判 none → workflow 无效（startup_failure）。
+    permissions:
+      contents: read
+      id-token: write # Sigstore OIDC：attest-build-provenance 必需
+      attestations: write # 写入 artifact attestation
     uses: ./.github/workflows/build-sign-attest.yml
     with:
       # tag 触发时默认上传；手动触发时听从输入
