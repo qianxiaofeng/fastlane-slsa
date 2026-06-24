@@ -105,7 +105,7 @@ export MATCH_PASSWORD='一个强口令'           # 用于加解密证书
 |------|------|
 | `MATCH_PASSWORD` | match 解密口令（与本地一致） |
 | `CERT_REPO_APP_PRIVATE_KEY` | GitHub App 的私钥（.pem 全文），CI 用它签发短期 token 访问证书仓库 |
-| `CERT_REPO_APP_ID` | GitHub App 的 App ID（数字）；CI 据此 + 私钥签发短期 token。本身不算敏感，存 secret 只为与私钥统一管理 |
+| `CERT_REPO_APP_CLIENT_ID` | GitHub App 的 **Client ID**（字符串，App 设置页可见）；CI 据此 + 私钥签发短期 token。本身不算敏感，存 secret 只为与私钥统一管理 |
 | `FASTLANE_USER` | Apple ID 邮箱 |
 | `FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD` | [App-specific password](https://support.apple.com/en-us/102654)，上传时绕过 2FA |
 
@@ -118,7 +118,8 @@ export MATCH_PASSWORD='一个强口令'           # 用于加解密证书
 1. **Settings → Developer settings → GitHub Apps → New GitHub App**：Repository permissions 只勾 **Contents: Read-only**，其余全部 No access。
 2. 安装这个 App 到你的**证书仓库**（仅该仓库，别 All repositories）。
 3. 生成一个 **Private key**（.pem），整段内容存为 secret `CERT_REPO_APP_PRIVATE_KEY`。
-4. App 的 **App ID** 存为 secret `CERT_REPO_APP_ID`（数字，不算敏感，存 secret 只为统一管理）。
+4. App 设置页的 **Client ID**（字符串，形如 `Iv23li...`）存为 secret `CERT_REPO_APP_CLIENT_ID`（不算敏感，存 secret 只为统一管理）。
+   > 注：旧版 action 用数字 **App ID**（`app-id` 输入），新版已弃用并改用 `client-id`，故这里存的是 Client ID 而非 App ID。
 
 ### Repository **variables**（非敏感）
 

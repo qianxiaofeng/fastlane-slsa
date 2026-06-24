@@ -71,6 +71,10 @@ jobs:
           bundler-cache: true
 
       - name: 用 XcodeGen 生成 .xcodeproj
+        env:
+          # macOS runner 预装的 aws/tap、azure/bicep 属未受信任 tap；显式开启 trust 检查，
+          # 让 brew 忽略它们（xcodegen 来自受信任的 homebrew/core，不受影响），消除过渡期警告。
+          HOMEBREW_REQUIRE_TAP_TRUST: "1"
         run: |
           brew install xcodegen
           cd ExampleApp && xcodegen generate
@@ -84,7 +88,7 @@ jobs:
         id: cert-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
-          app-id: ${{ secrets.CERT_REPO_APP_ID }}
+          client-id: ${{ secrets.CERT_REPO_APP_CLIENT_ID }}
           private-key: ${{ secrets.CERT_REPO_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           repositories: ${{ vars.CERT_REPO_NAME }} # 例：ios-certificates（不带 owner）
