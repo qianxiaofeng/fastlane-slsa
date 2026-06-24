@@ -125,7 +125,7 @@ jobs:
 
       # —— SBOM：生成依赖清单并对最终 .ipa 生成 attestation ——
       # Syft 扫描仓库依赖来源（Gemfile.lock = fastlane 工具链；未来引入 SPM 时也会识别 Package.resolved），
-      # 输出 SPDX JSON。随后 attest-sbom 把它绑定到与 provenance 相同的 .ipa digest，用同一套 OIDC + Sigstore
+      # 输出 SPDX JSON。随后 actions/attest 把它绑定到与 provenance 相同的 .ipa digest，用同一套 OIDC + Sigstore
       # 签名 —— 同一个产物因此拥有 provenance（怎么构建）+ SBOM（用了什么）两份可验证 attestation。
       - name: 生成 SBOM（Syft 扫依赖来源 → SPDX JSON）
         uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
@@ -136,7 +136,9 @@ jobs:
           upload-artifact: false # 归档与 attest 由本 workflow 自己处理，关掉 action 默认上传
 
       - name: 为 .ipa 生成 SBOM attestation（与 provenance 同一套 Sigstore 签名）
-        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4.1.0
+        # attest-sbom 已被 GitHub 废弃，迁移到通用 actions/attest；它同样有 sbom-path 输入，
+        # 直接吃 SPDX/CycloneDX 并自动识别为 SBOM，故参数（subject-path + sbom-path）原样不变。
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
         with:
           subject-path: build/ExampleApp.ipa # 绑定到与 provenance 相同的产物 digest
           sbom-path: build/ExampleApp.sbom.spdx.json
