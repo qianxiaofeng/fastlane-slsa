@@ -28,7 +28,7 @@ jobs:
   build-sign-attest:
     # iOS 必须在 macOS runner（Xcode）。macOS runner 是 GitHub 托管的 ephemeral 环境，
     # 满足 SLSA L3 对"隔离、一次性构建环境"的要求。
-    runs-on: macos-14
+    runs-on: macos-26 # App Store 上传要求 iOS 26 SDK，需 Xcode 26（macos-26 runner 默认携带）
 
     permissions:
       contents: read
@@ -57,9 +57,9 @@ jobs:
 
       - name: 选择 Xcode 版本
         run: |
-          # runner 上 Xcode 路径带具体小版本（如 Xcode_16.1.app），硬编码 Xcode_16.app 不存在 → 之前在此 exit 1。
-          # 动态选最新的 16.x；找不到再退回 runner 上最新的 Xcode。
-          XCODE=$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)
+          # App Store 上传要求 iOS 26 SDK（Xcode 26+）。runner 上 Xcode 路径带具体小版本
+          # （如 Xcode_26.2.app），动态选最新的 26.x；找不到再退回 runner 上最新的 Xcode。
+          XCODE=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
           [ -z "$XCODE" ] && XCODE=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
           echo "使用 $XCODE"
           sudo xcode-select -switch "$XCODE"

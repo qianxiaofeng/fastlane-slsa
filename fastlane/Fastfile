@@ -52,6 +52,9 @@ platform :ios do
       profile_name: "match AppStore #{app_id}",
     )
 
+    # CI 每次构建用递增的 build number（GITHUB_RUN_NUMBER），避免 App Store Connect 拒绝
+    # 重复的 (version, build) 组合；本地无此环境变量时回退为 1。
+    build_number = ENV["GITHUB_RUN_NUMBER"] || "1"
     build_app(
       project: PROJECT, # 必须显式指定，否则 gym 在根目录探测不到工程会在 CI crash。
       scheme: SCHEME,
@@ -59,6 +62,7 @@ platform :ios do
       output_directory: BUILD_DIR,
       output_name: IPA_NAME,
       clean: true,
+      xcargs: "CURRENT_PROJECT_VERSION=#{build_number}",
       # archive 阶段的签名已由上面的 update_code_signing_settings 写入工程；
       # export 阶段再用 match 装好的同名 profile。
       export_options: {

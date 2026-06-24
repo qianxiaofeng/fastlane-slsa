@@ -161,10 +161,19 @@ gh attestation verify ExampleApp.ipa \
 
 ## 已知限制 / 设计取舍
 
-- **Apple ID + app-specific password**：在 CI 里只能用于**上传**；管理证书需要登录
-  Developer Portal（会触发 2FA），因此本项目刻意让 CI 的 `match` 走 **readonly**，
-  把证书创建留在本地。若想让 CI 也能管理证书，更顺的方式是改用
-  **App Store Connect API Key（.p8）**。
+- **上传凭证的最佳实践是 App Store Connect API Key（.p8），而非 Apple ID 账号登录。**
+  本项目当前用 **Apple ID + app-specific password** 上传（绕过 2FA），属"能用但非最优"：
+  app-specific password 是**账号级**凭证，权限等同该 Apple ID 的角色、无法更细粒度收敛。
+  Apple 与 fastlane 官方推荐 CI 改用 **ASC API Key**——它能按**最小权限角色**（如仅
+  App Manager / Developer）签发、不绑定个人 Apple ID、不受 2FA 影响、可独立撤销与审计。
+  迁移方式：App Store Connect → Users and Access → Integrations 生成 API Key（Key ID +
+  Issuer ID + `.p8`），用 fastlane 的 `app_store_connect_api_key` 注入，`upload_to_testflight`
+  与 `match` 均可消费同一把 key。
+- **管理证书需要登录 Developer Portal（会触发 2FA）**，因此本项目刻意让 CI 的 `match` 走
+  **readonly**，把证书创建留在本地；换用上面的 ASC API Key 后，CI 也能可写管理证书。
+- **App 本身需满足 App Store 上传校验**：app 图标（asset catalog + `CFBundleIconName`）、
+  屏幕方向声明、以及用 **当年要求的 iOS SDK**（如 iOS 26 SDK / Xcode 26）构建。这些与 SLSA
+  provenance 无关，但缺失会让 `upload_to_testflight` 在 altool 阶段报 409 校验失败。
 - **所有 GitHub Actions 均已 pin 到 commit SHA**（见 `build-sign-attest.yml` 各 `uses:` 行，`#` 后注明版本号），
   消除可变 tag 被改写带来的供应链风险——这对一个讲供应链安全的项目尤为应当。升级时需同步更新 SHA 与版本注释
   （可借助 Dependabot：它能识别 pinned SHA 并在 PR 里连注释一起 bump）。
