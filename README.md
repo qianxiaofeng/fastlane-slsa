@@ -44,6 +44,19 @@ L3 的关键：provenance 的 `builder.id` 绑定到 reusable workflow 的引用
 
 ---
 
+## 深入文档
+
+| 文档 | 讲什么 |
+|------|--------|
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | 架构分层、L2/L3 分界、凭证选型（含 ASC API Key 迁移）、演进方向 |
+| [`docs/PROVENANCE.md`](docs/PROVENANCE.md) | **Provenance 具体内容**：in-toto 声明结构、每一步往里写了什么、"产物→流程→身份→透明日志"四环证据链如何环环相扣、验证时怎么逐环走通 |
+| [`docs/TRUST-MODEL.md`](docs/TRUST-MODEL.md) | **信任假设**：整条链最终把信任落在谁身上（GitHub runner + Sigstore + Rekor），SLSA 不消除信任而是**转移并收敛**信任，它明确**不防**什么（平台被攻陷、有权限的内鬼） |
+
+> 一句话区分：`PROVENANCE.md` 回答"**凭什么可信**"（证据链怎么环环相扣），
+> `TRUST-MODEL.md` 回答"**信任最终落在谁身上**"（链的地基是什么、不防什么）。
+
+---
+
 ## 目录结构
 
 ```
@@ -60,7 +73,10 @@ L3 的关键：provenance 的 `builder.id` 绑定到 reusable workflow 的引用
 │   └── build-sign-attest.yml    # reusable：构建+attest+上传（L3 核心）
 ├── scripts/bootstrap-local.sh   # 本地一次性：装工具、生成工程、首次 match
 ├── Gemfile
-└── docs/ARCHITECTURE.md
+└── docs/
+    ├── ARCHITECTURE.md          # 架构分层、L2/L3 分界、凭证选型
+    ├── PROVENANCE.md            # provenance 内容与证据链分析
+    └── TRUST-MODEL.md           # 信任假设与安全边界
 ```
 
 ---
