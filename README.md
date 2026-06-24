@@ -118,8 +118,7 @@ export MATCH_PASSWORD='一个强口令'           # 用于加解密证书
 1. **Settings → Developer settings → GitHub Apps → New GitHub App**：Repository permissions 只勾 **Contents: Read-only**，其余全部 No access。
 2. 安装这个 App 到你的**证书仓库**（仅该仓库，别 All repositories）。
 3. 生成一个 **Private key**（.pem），整段内容存为 secret `CERT_REPO_APP_PRIVATE_KEY`。
-4. App 设置页的 **Client ID**（字符串，形如 `Iv23li...`）存为 secret `CERT_REPO_APP_CLIENT_ID`（不算敏感，存 secret 只为统一管理）。
-   > 注：旧版 action 用数字 **App ID**（`app-id` 输入），新版已弃用并改用 `client-id`，故这里存的是 Client ID 而非 App ID。
+4. App 设置页的 **Client ID**（字符串，形如 `Iv23li...`，**注意不是数字 App ID**）存为 secret `CERT_REPO_APP_CLIENT_ID`（不算敏感，存 secret 只为统一管理）。
 
 ### Repository **variables**（非敏感）
 
