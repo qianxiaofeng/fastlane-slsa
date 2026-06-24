@@ -1,0 +1,44 @@
+# XcodeGen 配置：由它生成 ExampleApp.xcodeproj（工程文件不入库，避免 pbxproj 冲突）。
+# 生成：cd ExampleApp && xcodegen generate
+name: ExampleApp
+
+options:
+  bundleIdPrefix: com.example
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    # 手动签名：由 fastlane match + gym 注入证书/profile。
+    CODE_SIGN_STYLE: Manual
+    # 团队 ID 留空，CI 通过 FASTLANE_TEAM_ID / gym export options 提供。
+    DEVELOPMENT_TEAM: ""
+
+targets:
+  ExampleApp:
+    type: application
+    platform: iOS
+    sources:
+      - Sources
+    settings:
+      base:
+        # 必须与 fastlane/Appfile、Matchfile 里的 APP_IDENTIFIER 一致。
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.fastlaneslsa
+        INFOPLIST_KEY_UILaunchScreen_Generation: "YES"
+        INFOPLIST_KEY_CFBundleDisplayName: "SLSA Example"
+        GENERATE_INFOPLIST_FILE: "YES"
+        TARGETED_DEVICE_FAMILY: "1,2"
+
+# 显式声明 shared scheme，供 fastlane gym（scheme: ExampleApp）使用。
+schemes:
+  ExampleApp:
+    build:
+      targets:
+        ExampleApp: all
+    archive:
+      config: Release
+    run:
+      config: Debug

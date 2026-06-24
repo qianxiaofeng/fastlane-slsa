@@ -1,0 +1,33 @@
+# --- iOS / Xcode ---
+build/
+DerivedData/
+*.ipa
+*.dSYM.zip
+*.dSYM
+*.xcarchive
+xcuserdata/
+*.xcworkspace/xcuserdata/
+
+# XcodeGen 生成的工程文件（由 project.yml 重新生成，不入库）
+ExampleApp/ExampleApp.xcodeproj/
+
+# --- fastlane ---
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+fastlane/README.md.bak
+
+# --- Ruby / bundler ---
+vendor/bundle/
+.bundle/
+
+# --- 临时签名 keychain / 凭证（绝不入库）---
+*.p12
+*.cer
+*.mobileprovision
+*.p8
+AuthKey_*.p8
+
+# --- macOS ---
+.DS_Store

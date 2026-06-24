@@ -1,0 +1,21 @@
+# Matchfile：match 把"加密后的签名证书 + provisioning profile"集中存放在一个【私有 git 仓库】里。
+#
+# 工作模式：
+#   - 本地（首次）：以可写模式运行 `bundle exec fastlane match appstore`，
+#     登录 Developer Portal 创建证书/profile，加密后推送到下面的 git_url。
+#   - CI：readonly 模式，只 clone 该仓库并用 MATCH_PASSWORD 解密，【不登录 Developer Portal】，
+#     从而避开 Apple ID 在 CI 中的 2FA 问题。
+
+# 存放加密证书的私有仓库地址（与本项目代码仓库分开）。
+# 例：https://github.com/<you>/ios-certificates.git
+git_url(ENV["MATCH_GIT_URL"])
+
+storage_mode("git")
+
+# appstore 类型用于正式分发 / TestFlight。
+type("appstore")
+
+app_identifier([ENV["APP_IDENTIFIER"] || "com.example.fastlaneslsa"])
+
+# CI 中强制 readonly（由 fastlane 的 is_ci 在 Fastfile 里控制；这里给个保险默认值）。
+readonly(ENV["MATCH_READONLY"] == "true")

@@ -1,0 +1,68 @@
+# Fastfile：定义 CI/本地共用的构建流程。
+#
+# 职责划分（重要）：
+#   - fastlane 只负责【构建 .ipa】和【上传】。
+#   - SLSA provenance 的生成（attest-build-provenance）在 GitHub reusable workflow 里完成，
+#     插在 build 与 upload 之间，对最终 .ipa 签名。这样 builder 身份绑定到 reusable workflow，
+#     达到 SLSA v1 Build Level 3。
+
+default_platform(:ios)
+
+# 构建产物的固定路径，workflow 会据此计算 digest 并 attest。
+BUILD_DIR  = "build"
+IPA_NAME   = "ExampleApp.ipa"
+IPA_PATH   = File.join(BUILD_DIR, IPA_NAME)
+SCHEME     = "ExampleApp"
+
+platform :ios do
+  # ---------------------------------------------------------------------------
+  desc "下载签名证书与 provisioning profile（CI 中为 readonly，不碰 Developer Portal）"
+  lane :setup_signing do
+    # CI：创建临时 keychain，避免污染 runner 默认 keychain，并自动解锁。
+    setup_ci if is_ci
+
+    match(
+      type: "appstore",
+      # 关键：CI 中 readonly，只从私有 git 仓库下载已有证书；本地可写以便首次创建。
+      readonly: is_ci,
+    )
+  end
+
+  # ---------------------------------------------------------------------------
+  desc "构建并导出签名后的 .ipa（不上传、不 attest）"
+  lane :build do
+    setup_signing
+
+    # 由 project.yml 用 XcodeGen 生成 .xcodeproj（workflow / setup 脚本里已先执行 xcodegen）。
+    build_app(
+      scheme: SCHEME,
+      export_method: "app-store",
+      output_directory: BUILD_DIR,
+      output_name: IPA_NAME,
+      clean: true,
+      # 让 gym 使用 match 装好的 profile（match 已写入 ENV）。
+      export_options: {
+        signingStyle: "manual",
+      },
+    )
+
+    UI.success("已生成签名 .ipa: #{IPA_PATH}")
+  end
+
+  # ---------------------------------------------------------------------------
+  desc "上传 .ipa 到 TestFlight（Apple ID + app-specific password，绕过 2FA）"
+  lane :upload do |options|
+    ipa = options[:ipa] || IPA_PATH
+
+    # upload_to_testflight 在底层用 altool/transporter；
+    # 通过 FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD 提供 app-specific password 绕过 2FA。
+    upload_to_testflight(
+      ipa: ipa,
+      apple_id: ENV["FASTLANE_APP_ID"], # App Store Connect 里 app 的数字 ID（可选，能加速定位）
+      skip_waiting_for_build_processing: true,
+      changelog: ENV["TESTFLIGHT_CHANGELOG"] || "Automated SLSA-attested build.",
+    )
+
+    UI.success("已上传到 TestFlight: #{ipa}")
+  end
+end

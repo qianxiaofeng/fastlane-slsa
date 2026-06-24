@@ -1,0 +1,98 @@
+# ============================================================================
+# Reusable Workflow：构建 + SLSA Provenance + 上传
+#
+# 这是达到 SLSA v1 Build Level 3 的【关键】：把【整个 iOS 构建过程】放进一个
+# 集中管理的 reusable workflow。生成的 provenance 的 builder.id 会绑定到本文件
+# 的引用（owner/repo/.github/workflows/build-sign-attest.yml@ref），调用方仓库
+# 无法篡改，因此 provenance 不可伪造 —— 这正是 L2 与 L3 的分界线。
+#
+# 验证时用：
+#   gh attestation verify ExampleApp.ipa \
+#     --repo <owner>/<repo> \
+#     --signer-workflow <owner>/<repo>/.github/workflows/build-sign-attest.yml
+# ============================================================================
+name: Build, Sign & Attest (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      upload-to-testflight:
+        description: "构建并 attest 后是否上传到 TestFlight"
+        type: boolean
+        default: false
+    # secrets 通过调用方的 `secrets: inherit` 传入，这里直接用 ${{ secrets.* }} 引用。
+
+permissions: {} # 默认全部关闭，权限在 job 级最小化授予
+
+jobs:
+  build-sign-attest:
+    # iOS 必须在 macOS runner（Xcode）。macOS runner 是 GitHub 托管的 ephemeral 环境，
+    # 满足 SLSA L3 对"隔离、一次性构建环境"的要求。
+    runs-on: macos-14
+
+    permissions:
+      contents: read
+      id-token: write # Sigstore OIDC：签发短期签名证书
+      attestations: write # 写入 artifact attestation
+
+    env:
+      # —— 非敏感配置（用 repository variables 注入）——
+      APP_IDENTIFIER: ${{ vars.APP_IDENTIFIER }}
+      FASTLANE_TEAM_ID: ${{ vars.FASTLANE_TEAM_ID }}
+      FASTLANE_ITC_TEAM_ID: ${{ vars.FASTLANE_ITC_TEAM_ID }}
+      FASTLANE_APP_ID: ${{ vars.FASTLANE_APP_ID }}
+      MATCH_GIT_URL: ${{ vars.MATCH_GIT_URL }}
+      # —— CI 中强制 match 只读，不登录 Developer Portal，绕过 2FA ——
+      MATCH_READONLY: "true"
+      # —— 敏感凭证（用 secrets 注入）——
+      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+      # base64("用户名:个人访问令牌")，让 match 能 clone 私有证书仓库
+      MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+      FASTLANE_USER: ${{ secrets.FASTLANE_USER }}
+      FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: 选择 Xcode 版本
+        run: sudo xcode-select -switch /Applications/Xcode_16.app
+
+      - name: 安装 Ruby 与 fastlane 依赖
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - name: 用 XcodeGen 生成 .xcodeproj
+        run: |
+          brew install xcodegen
+          cd ExampleApp && xcodegen generate
+
+      - name: 构建签名 .ipa
+        run: bundle exec fastlane ios build
+
+      - name: 打印产物 SHA-256（写入构建日志便于核对）
+        id: digest
+        run: |
+          DIGEST=$(shasum -a 256 build/ExampleApp.ipa | awk '{print $1}')
+          echo "sha256=$DIGEST" >> "$GITHUB_OUTPUT"
+          echo "ExampleApp.ipa  sha256=$DIGEST"
+
+      # —— SLSA Provenance：对最终 .ipa 生成并签名 attestation ——
+      # 放在 build 之后、upload 之前，确保被证明的就是真正分发的那个产物。
+      # 注：生产环境建议把 @v1 固定到 commit SHA。
+      - name: 生成 SLSA Build Provenance
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: build/ExampleApp.ipa
+
+      - name: 上传到 TestFlight（可选）
+        if: ${{ inputs.upload-to-testflight }}
+        run: bundle exec fastlane ios upload
+
+      - name: 归档 .ipa 产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: ExampleApp-ipa
+          path: build/ExampleApp.ipa
+          if-no-files-found: error

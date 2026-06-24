@@ -1,0 +1,13 @@
+# Appfile：应用与账号的基本信息
+# 全部从环境变量读取，避免把账号信息写死进仓库（CI 与本地都用 env 注入）。
+
+app_identifier(ENV["APP_IDENTIFIER"] || "com.example.fastlaneslsa")
+
+# Apple ID（开发者账号邮箱）。CI 中由 secret FASTLANE_USER 注入。
+apple_id(ENV["FASTLANE_USER"])
+
+# Developer Portal 团队 ID（10 位字符）。
+team_id(ENV["FASTLANE_TEAM_ID"])
+
+# App Store Connect 团队 ID（数字），账号属于多个团队时需要。
+itc_team_id(ENV["FASTLANE_ITC_TEAM_ID"]) if ENV["FASTLANE_ITC_TEAM_ID"]
