@@ -38,6 +38,20 @@ platform :ios do
 
     # 由 project.yml 用 XcodeGen 生成 .xcodeproj（workflow / setup 脚本里已先执行 xcodegen）。
     app_id = ENV.fetch("APP_IDENTIFIER", "com.example.fastlaneslsa")
+
+    # XcodeGen 生成的工程是 manual 签名但未绑定具体 profile/team，archive 阶段 xcodebuild 会报
+    # "requires a provisioning profile"。export_options 只作用于 export 阶段，救不了 archive。
+    # match 已装好名为 "match AppStore <bundle id>" 的 profile 与 Apple Distribution 证书，
+    # 这里把 team / 证书 / profile 名写进工程签名设置（.xcodeproj 不入库、每次重生成，改它无副作用）。
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path: PROJECT,
+      team_id: ENV["FASTLANE_TEAM_ID"],
+      bundle_identifier: app_id,
+      code_sign_identity: "Apple Distribution",
+      profile_name: "match AppStore #{app_id}",
+    )
+
     build_app(
       project: PROJECT, # 必须显式指定，否则 gym 在根目录探测不到工程会在 CI crash。
       scheme: SCHEME,
@@ -45,10 +59,8 @@ platform :ios do
       output_directory: BUILD_DIR,
       output_name: IPA_NAME,
       clean: true,
-      # manual signing：archive 阶段用 FASTLANE_TEAM_ID（env 注入、不入库）定位证书；
-      # export 阶段用 match 装好的 profile（名称固定为 "match AppStore <bundle id>"，
-      # 见 CI 日志的 MATCH_PROVISIONING_PROFILE_MAPPING）。
-      xcargs: "DEVELOPMENT_TEAM=#{ENV['FASTLANE_TEAM_ID']}",
+      # archive 阶段的签名已由上面的 update_code_signing_settings 写入工程；
+      # export 阶段再用 match 装好的同名 profile。
       export_options: {
         signingStyle: "manual",
         provisioningProfiles: {
