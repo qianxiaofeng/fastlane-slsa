@@ -28,6 +28,9 @@ vendor/bundle/
 *.mobileprovision
 *.p8
 AuthKey_*.p8
+*.pem
+# 本地存放的 GitHub App 私钥 / App ID 等（绝不入库）
+.private/
 
 # --- macOS ---
 .DS_Store

@@ -8,6 +8,10 @@
 
 # 存放加密证书的私有仓库地址（与本项目代码仓库分开）。
 # 例：https://github.com/<you>/ios-certificates.git
+#
+# CI 的 clone 凭证（MATCH_GIT_BASIC_AUTHORIZATION）不再用长期 PAT：
+# 由 workflow 用 GitHub App 签发的【短期 installation token】组装，仅约 1h 有效、
+# 权限锁死到"只读这一个证书仓库"。本地首次 bootstrap 仍走你自己的 git 凭证。
 git_url(ENV["MATCH_GIT_URL"])
 
 storage_mode("git")

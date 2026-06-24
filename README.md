@@ -104,15 +104,20 @@ export MATCH_PASSWORD='一个强口令'           # 用于加解密证书
 | 名称 | 说明 |
 |------|------|
 | `MATCH_PASSWORD` | match 解密口令（与本地一致） |
-| `MATCH_GIT_BASIC_AUTHORIZATION` | `base64("用户名:个人访问令牌")`，让 CI 能 clone 私有证书仓库 |
+| `CERT_REPO_APP_PRIVATE_KEY` | GitHub App 的私钥（.pem 全文），CI 用它签发短期 token 访问证书仓库 |
 | `FASTLANE_USER` | Apple ID 邮箱 |
 | `FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD` | [App-specific password](https://support.apple.com/en-us/102654)，上传时绕过 2FA |
 
-生成 `MATCH_GIT_BASIC_AUTHORIZATION`：
+> **不再需要长期 PAT。** 旧版用 `MATCH_GIT_BASIC_AUTHORIZATION`（`base64("用户名:PAT")`）让 CI clone 证书仓库。
+> 现在改用一个 **GitHub App** 签发的短期 installation token：CI 运行时才签发、约 1 小时失效、权限锁死到"只读证书仓库"。
+> 长期保管的只剩 App 的私钥，作用域远窄于一个能读你账号下所有仓库的 PAT。
 
-```bash
-echo -n "your-gh-username:ghp_xxxxToken" | base64
-```
+设置 GitHub App（一次性）：
+
+1. **Settings → Developer settings → GitHub Apps → New GitHub App**：Repository permissions 只勾 **Contents: Read-only**，其余全部 No access。
+2. 安装这个 App 到你的**证书仓库**（仅该仓库，别 All repositories）。
+3. 生成一个 **Private key**（.pem），整段内容存为 secret `CERT_REPO_APP_PRIVATE_KEY`。
+4. App 的 **App ID** 存为 secret `CERT_REPO_APP_ID`（数字，不算敏感，存 secret 只为统一管理）。
 
 ### Repository **variables**（非敏感）
 
@@ -123,6 +128,7 @@ echo -n "your-gh-username:ghp_xxxxToken" | base64
 | `FASTLANE_ITC_TEAM_ID` | `118xxxxx`（账号属多团队时） |
 | `FASTLANE_APP_ID` | App Store Connect 里 app 的数字 ID（可选） |
 | `MATCH_GIT_URL` | `https://github.com/you/ios-certificates.git` |
+| `CERT_REPO_NAME` | 证书仓库名（不带 owner），如 `ios-certificates`；GitHub App 据此锁定授权范围 |
 
 ---
 

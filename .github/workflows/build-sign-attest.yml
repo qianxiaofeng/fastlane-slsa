@@ -46,8 +46,8 @@ jobs:
       MATCH_READONLY: "true"
       # —— 敏感凭证（用 secrets 注入）——
       MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-      # base64("用户名:个人访问令牌")，让 match 能 clone 私有证书仓库
-      MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+      # 注：MATCH_GIT_BASIC_AUTHORIZATION 不再用长期 PAT，而是在下方 step 里由
+      # GitHub App 签发的【短期】token 动态组装后写入 $GITHUB_ENV（见 "签发证书仓库短期访问 token"）。
       FASTLANE_USER: ${{ secrets.FASTLANE_USER }}
       FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}
 
@@ -67,6 +67,27 @@ jobs:
         run: |
           brew install xcodegen
           cd ExampleApp && xcodegen generate
+
+      # —— 用 GitHub App 签发【短期】token 访问私有证书仓库 ——
+      # 取代长期 PAT：installation token 仅约 1 小时有效，权限锁死到"只读这一个证书仓库"。
+      # App 的 private key 是唯一长期 secret，但作用域远窄于一个能读账号下所有仓库的 PAT。
+      # （GitHub Actions OIDC 无法直接 clone 私有 repo，故 git storage 下用 App token，
+      #  而真·OIDC 继续服务于下方的 attest-build-provenance 签名。）
+      - name: 签发证书仓库短期访问 token
+        id: cert-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.CERT_REPO_APP_ID }}
+          private-key: ${{ secrets.CERT_REPO_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ vars.CERT_REPO_NAME }} # 例：ios-certificates（不带 owner）
+
+      - name: 用短期 token 组装 match git 凭证
+        run: |
+          # match 读取 base64("用户名:令牌")；GitHub App token 的用户名固定为 x-access-token。
+          AUTH=$(printf 'x-access-token:%s' '${{ steps.cert-token.outputs.token }}' | base64 | tr -d '\n')
+          echo "::add-mask::$AUTH"
+          echo "MATCH_GIT_BASIC_AUTHORIZATION=$AUTH" >> "$GITHUB_ENV"
 
       - name: 构建签名 .ipa
         run: bundle exec fastlane ios build

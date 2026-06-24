@@ -76,14 +76,20 @@ GitHub 在签发 Sigstore OIDC token 时，token 的身份里包含 `job_workflo
 
 | 凭证 | 用途 | 为什么这样放 |
 |------|------|--------------|
-| `MATCH_PASSWORD` | 解密证书 | CI 只读解密，不需要 Apple 登录 |
-| `MATCH_GIT_BASIC_AUTHORIZATION` | clone 私有证书仓库 | 限定只读访问证书仓库的 token |
+| `MATCH_PASSWORD` | 解密证书 | CI 只读解密，不需要 Apple 登录；对称口令无法联邦化，只能当 secret |
+| GitHub App **短期 token** | clone 私有证书仓库 | 取代长期 PAT：运行时签发、约 1h 失效、权限锁死"只读证书仓库"。长期保管的只剩 App 私钥 |
 | `FASTLANE_USER` + app-specific password | 上传 TestFlight | app-specific password 绕过 2FA，仅上传可用 |
 | Sigstore OIDC token | 签名 provenance | 由 GitHub 在 runner 内短期签发，**不是仓库 secret**，构建脚本无法导出 |
 
 关键设计：**签名 provenance 用的不是任何长期密钥**，而是 GitHub 运行时签发、绑定
 workflow 身份的短期 OIDC token + Sigstore 短期证书。这就是 L3 "签名材料构建任务不可
 窃取" 的体现。
+
+> **凭证短期化的边界**：GitHub Actions OIDC（`id-token`）只能给 Sigstore/外部云做身份联邦，
+> **不能直接 clone 私有 GitHub 仓库**。因此证书存储维持 git 模式时，clone 凭证用 **GitHub App
+> 短期 installation token**（最接近 OIDC 的等价物），把唯一长期密钥从"能读账号下所有仓库的 PAT"
+> 收敛成"只读单个证书仓库的 App 私钥"。若想把这一步也换成真·OIDC，需把证书存储迁到 GCS/S3
+> 并用 Workload Identity Federation——见第 6 节。
 
 ---
 
