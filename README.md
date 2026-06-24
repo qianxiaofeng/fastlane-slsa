@@ -162,16 +162,14 @@ gh attestation verify ExampleApp.ipa \
 ## 已知限制 / 设计取舍
 
 - **上传凭证的最佳实践是 App Store Connect API Key（.p8），而非 Apple ID 账号登录。**
-  本项目当前用 **Apple ID + app-specific password** 上传（绕过 2FA），属"能用但非最优"：
-  app-specific password 是**账号级**凭证，权限等同该 Apple ID 的角色、无法更细粒度收敛。
-  实测它只够经 altool **上传 binary**；任何 **ASC 管理操作**（设置 TestFlight changelog、
-  分发测试组）会触发 Spaceship 登录，在非交互 CI 下失败——故本项目 CI 的 upload 仅上传
-  binary、不设 changelog（changelog 可事后在 ASC 网页补，或改用 API Key 后在 CI 内设置）。
-  Apple 与 fastlane 官方推荐 CI 改用 **ASC API Key**——它能按**最小权限角色**（如仅
-  App Manager / Developer）签发、不绑定个人 Apple ID、不受 2FA 影响、可独立撤销与审计。
-  迁移方式：App Store Connect → Users and Access → Integrations 生成 API Key（Key ID +
-  Issuer ID + `.p8`），用 fastlane 的 `app_store_connect_api_key` 注入，`upload_to_testflight`
-  与 `match` 均可消费同一把 key。
+  本项目当前用 **Apple ID + app-specific password** 上传（绕过 2FA），属"能用但非最优"。
+  app-specific password 并非"上传专用令牌"，而是 **Apple ID 的旁路认证通道**——同一口令还能经
+  IMAP/CalDAV 访问该账号的 iCloud 邮件/通讯录/日历，泄漏波及面**超出"上传"**，且**账号级、无法按 app 收窄**。
+  实测它也只够经 altool **上传 binary**；设置 changelog / 分发测试组等 ASC 管理操作会触发 Spaceship 登录、
+  在非交互 CI 下失败——故本项目 CI 仅上传 binary、不设 changelog（可事后在 ASC 网页补）。
+  **ASC API Key** 则可沿两个维度收敛权限：按**角色**（App Manager / Developer 等最小权限）+ 用
+  **Individual Key** 锁到指定 app；不绑个人 Apple ID、不受 2FA 影响、可按 key 独立撤销。
+  选型、角色权限矩阵与迁移 delta 详见 [`docs/ARCHITECTURE.md` 第 5 节](docs/ARCHITECTURE.md)。
 - **管理证书需要登录 Developer Portal（会触发 2FA）**，因此本项目刻意让 CI 的 `match` 走
   **readonly**，把证书创建留在本地；换用上面的 ASC API Key 后，CI 也能可写管理证书。
 - **App 本身需满足 App Store 上传校验**：app 图标（asset catalog + `CFBundleIconName`）、
