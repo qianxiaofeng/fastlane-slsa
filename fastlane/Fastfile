@@ -83,11 +83,15 @@ platform :ios do
 
     # upload_to_testflight 在底层用 altool/transporter；
     # 通过 FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD 提供 app-specific password 绕过 2FA。
+    #
+    # 【刻意不传 changelog】：同时给 skip_waiting_for_build_processing + changelog 时，fastlane
+    # 会在 binary 上传成功【之后】登录 App Store Connect（Spaceship/ASC API）去更新 changelog，
+    # 而 app-specific password 不支持 Spaceship 登录 → 非交互 CI 下崩溃（尽管 binary 已上传成功）。
+    # 要在 CI 内设 changelog / 分发测试组，正路是改用 App Store Connect API Key（.p8），见 README。
     upload_to_testflight(
       ipa: ipa,
       apple_id: ENV["FASTLANE_APP_ID"], # App Store Connect 里 app 的数字 ID（可选，能加速定位）
       skip_waiting_for_build_processing: true,
-      changelog: ENV["TESTFLIGHT_CHANGELOG"] || "Automated SLSA-attested build.",
     )
 
     UI.success("已上传到 TestFlight: #{ipa}")

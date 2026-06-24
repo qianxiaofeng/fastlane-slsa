@@ -164,6 +164,9 @@ gh attestation verify ExampleApp.ipa \
 - **上传凭证的最佳实践是 App Store Connect API Key（.p8），而非 Apple ID 账号登录。**
   本项目当前用 **Apple ID + app-specific password** 上传（绕过 2FA），属"能用但非最优"：
   app-specific password 是**账号级**凭证，权限等同该 Apple ID 的角色、无法更细粒度收敛。
+  实测它只够经 altool **上传 binary**；任何 **ASC 管理操作**（设置 TestFlight changelog、
+  分发测试组）会触发 Spaceship 登录，在非交互 CI 下失败——故本项目 CI 的 upload 仅上传
+  binary、不设 changelog（changelog 可事后在 ASC 网页补，或改用 API Key 后在 CI 内设置）。
   Apple 与 fastlane 官方推荐 CI 改用 **ASC API Key**——它能按**最小权限角色**（如仅
   App Manager / Developer）签发、不绑定个人 Apple ID、不受 2FA 影响、可独立撤销与审计。
   迁移方式：App Store Connect → Users and Access → Integrations 生成 API Key（Key ID +
