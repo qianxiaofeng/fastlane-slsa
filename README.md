@@ -19,6 +19,7 @@ git tag v1.0.0  ──push──▶  release.yml (caller)
                    ├─ fastlane match   下载证书/profile（readonly，不碰 Developer Portal）
                    ├─ fastlane gym     构建签名 .ipa
                    ├─ attest-build-provenance   ← 生成并签名 SLSA provenance（L3 关键）
+                   ├─ syft + attest-sbom        ← 生成 SBOM 并 attest 到同一 .ipa
                    └─ fastlane pilot   上传 TestFlight（Apple ID + app-specific password）
 ```
 
@@ -172,6 +173,19 @@ gh attestation verify ExampleApp.ipa \
 
 `--signer-workflow` 强制要求该 attestation 必须由我们的 reusable workflow 签发——
 这正是 L3 "不可伪造" 的落地校验。
+
+同一个 `.ipa` 还附带一份 **SBOM attestation**（依赖清单，SPDX）。按 predicate 类型单独验证：
+
+```bash
+gh attestation verify ExampleApp.ipa \
+  --repo <owner>/<repo> \
+  --predicate-type https://spdx.dev/Document \
+  --signer-workflow <owner>/<repo>/.github/workflows/build-sign-attest.yml
+```
+
+> app 本身无第三方运行时依赖，故 SBOM 内容以**构建工具链**（`Gemfile.lock`）为主，
+> 引入 SPM 依赖后 Syft 会自动纳入。生成原理与 provenance 的关系见
+> [`docs/PROVENANCE.md` 第 7 节](docs/PROVENANCE.md)。
 
 ---
 
