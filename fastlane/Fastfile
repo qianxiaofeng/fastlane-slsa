@@ -13,6 +13,9 @@ BUILD_DIR  = "build"
 IPA_NAME   = "ExampleApp.ipa"
 IPA_PATH   = File.join(BUILD_DIR, IPA_NAME)
 SCHEME     = "ExampleApp"
+# gym 在仓库根目录运行，需显式指向子目录里的工程；否则探测不到 .xcodeproj 会进入
+# 交互式选择，在 CI 非交互模式下直接 crash（detect_projects → select_project → input）。
+PROJECT    = "ExampleApp/ExampleApp.xcodeproj"
 
 platform :ios do
   # ---------------------------------------------------------------------------
@@ -34,15 +37,23 @@ platform :ios do
     setup_signing
 
     # 由 project.yml 用 XcodeGen 生成 .xcodeproj（workflow / setup 脚本里已先执行 xcodegen）。
+    app_id = ENV.fetch("APP_IDENTIFIER", "com.example.fastlaneslsa")
     build_app(
+      project: PROJECT, # 必须显式指定，否则 gym 在根目录探测不到工程会在 CI crash。
       scheme: SCHEME,
       export_method: "app-store",
       output_directory: BUILD_DIR,
       output_name: IPA_NAME,
       clean: true,
-      # 让 gym 使用 match 装好的 profile（match 已写入 ENV）。
+      # manual signing：archive 阶段用 FASTLANE_TEAM_ID（env 注入、不入库）定位证书；
+      # export 阶段用 match 装好的 profile（名称固定为 "match AppStore <bundle id>"，
+      # 见 CI 日志的 MATCH_PROVISIONING_PROFILE_MAPPING）。
+      xcargs: "DEVELOPMENT_TEAM=#{ENV['FASTLANE_TEAM_ID']}",
       export_options: {
         signingStyle: "manual",
+        provisioningProfiles: {
+          app_id => "match AppStore #{app_id}",
+        },
       },
     )
 
