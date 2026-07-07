@@ -32,5 +32,9 @@ jobs:
     with:
       # tag 触发时默认上传；手动触发时听从输入
       upload-to-testflight: ${{ github.event_name == 'push' || inputs.upload-to-testflight }}
-    # 把本仓库的所有 secrets 透传给 reusable workflow
-    secrets: inherit
+    secrets:
+      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+      FASTLANE_USER: ${{ secrets.FASTLANE_USER }}
+      FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}
+      CERT_REPO_APP_CLIENT_ID: ${{ secrets.CERT_REPO_APP_CLIENT_ID }}
+      CERT_REPO_APP_PRIVATE_KEY: ${{ secrets.CERT_REPO_APP_PRIVATE_KEY }}
