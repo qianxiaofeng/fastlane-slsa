@@ -20,7 +20,17 @@ on:
         description: "构建并 attest 后是否上传到 TestFlight"
         type: boolean
         default: false
-    # secrets 通过调用方的 `secrets: inherit` 传入，这里直接用 ${{ secrets.* }} 引用。
+    secrets:
+      MATCH_PASSWORD:
+        required: true
+      FASTLANE_USER:
+        required: true
+      FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD:
+        required: true
+      CERT_REPO_APP_CLIENT_ID:
+        required: true
+      CERT_REPO_APP_PRIVATE_KEY:
+        required: true
 
 permissions: {} # 默认全部关闭，权限在 job 级最小化授予
 
